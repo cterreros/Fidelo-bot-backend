@@ -1,15 +1,28 @@
 # FideloBot Backend
 
-Este es el backend del proyecto **FideloBot**, un sistema de fidelización para pequeños negocios que permite registrar compras, asignar puntos a clientes y automatizar mensajes como cumpleaños.
+Este es el backend del proyecto **FideloBot**, un sistema de fidelización para pequeños negocios que permite registrar compras, asignar puntos a clientes y automatizar mensajes como cumpleaños (ej. con Telegram bot).
+
+---
 
 ## 🚀 Tecnologías utilizadas
+
 - Python 3.10+
-- Django
-- Django Rest Framework
+- Django 4.x
+- Django Rest Framework (DRF)
 - PostgreSQL
+- (Futuro) python-telegram-bot, APScheduler o Celery
+
+---
 
 ## 🧱 Objetivo técnico
-Este proyecto está estructurado para convertirse en una **librería de fidelización reutilizable** en otros proyectos, además de poder usarse como servicio SaaS.
+
+Este proyecto está estructurado para convertirse en:
+
+- 🧩 Una **librería reutilizable** de fidelización
+- ☁️ Un **servicio SaaS** alojado (multi negocio)
+- 🤖 Un bot con integración simple por canal (Telegram, WhatsApp)
+
+---
 
 ## 🔧 Cómo iniciar el proyecto
 

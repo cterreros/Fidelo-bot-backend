@@ -1,32 +1,32 @@
 # FideloBot Backend
 
-Este es el backend del proyecto **FideloBot**, un sistema de fidelización para pequeños negocios que permite registrar compras, asignar puntos a clientes y automatizar mensajes como cumpleaños (ej. con Telegram bot).
+This is the backend of the FideloBot project, a loyalty system for small businesses that allows registering purchases, assigning points to customers, and automating messages such as birthday greetings (e.g., via Telegram bot).
 
 ---
 
-## 🚀 Tecnologías utilizadas
+## 🚀  Technologies Used
 
 - Python 3.10+
 - Django 4.x
 - Django Rest Framework (DRF)
 - PostgreSQL
-- (Futuro) python-telegram-bot, APScheduler o Celery
+- (Futuro) python-telegram-bot, APScheduler or Celery
 
 ---
 
-## 🧱 Objetivo técnico
+## 🧱 Technical Objective
 
-Este proyecto está estructurado para convertirse en:
+This project is structured to become:
 
-- 🧩 Una **librería reutilizable** de fidelización
-- ☁️ Un **servicio SaaS** alojado (multi negocio)
-- 🤖 Un bot con integración simple por canal (Telegram, WhatsApp)
+- 🧩 A reusable loyalty library
+- ☁️ A hosted SaaS service (multi-business)
+- 🤖 A bot with simple channel integration (Telegram, WhatsApp)
 
 ---
 
-## 🔧 Cómo iniciar el proyecto
+## 🔧 How to Start the Project
 
-1. Clona el repositorio:
+1. Clone the repository:
 ```bash
 git clone https://github.com/tuusuario/fidelo-bot-backend.git
 cd fidelo-bot-backend

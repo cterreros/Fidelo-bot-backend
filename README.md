@@ -68,7 +68,7 @@ Activate the virtual environment:
 - On **Windows**:
 
 ```bash
-.\env\Scripts\ctivate
+.\env\Scripts\activate
 ```
 
 - On **Linux/macOS**:

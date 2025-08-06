@@ -87,7 +87,57 @@ pip install -r requirements.txt
 
 ---
 
-### 5. Apply database migrations
+### 5. Configure PostgreSQL database connection
+
+#### 1. Create the database
+
+Use **pgAdmin 4**:
+
+- Open pgAdmin and connect to your local server
+- Right-click `Databases` → `Create` → `Database...`
+- Name it: `fidelo_db`  
+- Make sure the owner is: `postgres`
+
+#### 2. Create a `.env` file
+
+At the root of the project, add a file named `.env`:
+
+```env
+DB_NAME=fidelo_db
+DB_USER=postgres
+DB_PASSWORD=YOUR_PASSWORD
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+> 🔒 Replace `YOUR_PASSWORD` with your actual PostgreSQL password.
+
+#### 3. Confirm the following packages are installed:
+
+```bash
+pip install python-decouple psycopg2-binary
+```
+
+#### 4. In `fidelo/settings.py` replace `DATABASES` section:
+
+```python
+from decouple import config
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
+    }
+}
+```
+
+---
+
+### 6. Apply migrations
 
 ```bash
 python manage.py migrate
@@ -95,12 +145,19 @@ python manage.py migrate
 
 ---
 
-### 6. Run the development server (use port 8080)
+### 7. Run the development server (port 8080)
 
 ```bash
 python manage.py runserver 127.0.0.1:8080
 ```
 
-Now visit in your browser:
+Visit: [http://127.0.0.1:8080](http://127.0.0.1:8080)
 
-http://127.0.0.1:8080
+---
+
+## 📁 Dev Files & Docs
+
+- 🔗 Entity-Relationship Diagram: [`docs/fidelo_diagrama.drawio`](docs/fidelo_diagrama.drawio)
+- 📝 Setup Guide: [`setup_backend.md`](setup_backend.md)
+
+---

@@ -1,7 +1,7 @@
+# core/models.py
 import uuid
 from django.db import models
 from django.utils import timezone
-
 
 class Business(models.Model):
     business_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -14,14 +14,6 @@ class Business(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = "Business"
-        verbose_name_plural = "Businesses"
-
-
 class Client(models.Model):
     client_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     business = models.ForeignKey(Business, on_delete=models.CASCADE)
@@ -33,14 +25,8 @@ class Client(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.name} ({self.business.name})"
-
     class Meta:
         unique_together = (("business", "email"), ("business", "phone"))
-        verbose_name = "Client"
-        verbose_name_plural = "Clients"
-
 
 class LoyaltyAccount(models.Model):
     account_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -48,14 +34,6 @@ class LoyaltyAccount(models.Model):
     client = models.OneToOneField(Client, on_delete=models.CASCADE)
     points_balance = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.client.name} - {self.points_balance} points"
-
-    class Meta:
-        verbose_name = "Loyalty Account"
-        verbose_name_plural = "Loyalty Accounts"
-
 
 class Purchase(models.Model):
     purchase_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -65,15 +43,6 @@ class Purchase(models.Model):
     currency = models.CharField(max_length=8, default="MXN")
     purchased_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.client.name} - ${self.amount} {self.currency}"
-
-    class Meta:
-        verbose_name = "Purchase"
-        verbose_name_plural = "Purchases"
-        ordering = ['-purchased_at']
-
 
 class PointEvent(models.Model):
     class Source(models.TextChoices):
@@ -90,12 +59,4 @@ class PointEvent(models.Model):
     note = models.CharField(max_length=200, blank=True)
     occurred_at = models.DateTimeField(default=timezone.now)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        sign = "+" if self.points > 0 else ""
-        return f"{self.client.name} - {sign}{self.points} pts ({self.get_source_display()})"
-
-    class Meta:
-        verbose_name = "Point Event"
-        verbose_name_plural = "Point Events"
-        ordering = ['-occurred_at']
+bhi-opwj-xxf

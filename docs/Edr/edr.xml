@@ -1,0 +1,69 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Modelo de Software">
+    <mxGraphModel dx="1420" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Business -->
+        <mxCell id="Business" value="Business&#xa;- business_id (PK)&#xa;- name&#xa;- email&#xa;- timezone&#xa;- points_per_currency&#xa;- birthday_bonus_points&#xa;- is_active&#xa;- created_at&#xa;- updated_at" style="shape=rectangle;whiteSpace=wrap;rounded=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="220" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- Client -->
+        <mxCell id="Client" value="Client&#xa;- client_id (PK)&#xa;- business_id (FK)&#xa;- name&#xa;- email&#xa;- phone&#xa;- birthday&#xa;- joined_at&#xa;- created_at&#xa;- updated_at&#xa;UNIQUE(business,email)&#xa;UNIQUE(business,phone)" style="shape=rectangle;whiteSpace=wrap;rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="340" y="60" width="260" height="260" as="geometry" />
+        </mxCell>
+
+        <!-- LoyaltyAccount -->
+        <mxCell id="LoyaltyAccount" value="LoyaltyAccount&#xa;- account_id (PK)&#xa;- business_id (FK)&#xa;- client_id (1-1 FK)&#xa;- points_balance&#xa;- updated_at" style="shape=rectangle;whiteSpace=wrap;rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="680" y="60" width="220" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- Purchase -->
+        <mxCell id="Purchase" value="Purchase&#xa;- purchase_id (PK)&#xa;- business_id (FK)&#xa;- client_id (FK)&#xa;- amount&#xa;- currency&#xa;- purchased_at&#xa;- created_at" style="shape=rectangle;whiteSpace=wrap;rounded=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="340" y="380" width="240" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- PointEvent -->
+        <mxCell id="PointEvent" value="PointEvent&#xa;- event_id (PK)&#xa;- business_id (FK)&#xa;- client_id (FK)&#xa;- source {purchase,birthday,adjustment}&#xa;- points&#xa;- related_purchase_id (FK nullable)&#xa;- note&#xa;- occurred_at&#xa;- created_at" style="shape=rectangle;whiteSpace=wrap;rounded=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="680" y="280" width="280" height="200" as="geometry" />
+        </mxCell>
+
+        <!-- Relaciones -->
+        <mxCell id="rel1" edge="1" parent="1" source="Business" target="Client" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel2" edge="1" parent="1" source="Business" target="LoyaltyAccount" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel3" edge="1" parent="1" source="Business" target="Purchase" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel4" edge="1" parent="1" source="Business" target="PointEvent" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel5" edge="1" parent="1" source="Client" target="LoyaltyAccount" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel6" edge="1" parent="1" source="Client" target="Purchase" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel7" edge="1" parent="1" source="Client" target="PointEvent" style="endArrow=block;endFill=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rel8" edge="1" parent="1" source="Purchase" target="PointEvent" style="endArrow=block;endFill=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

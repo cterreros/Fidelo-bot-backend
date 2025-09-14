@@ -29,7 +29,7 @@ class Client(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=32, blank=True, null=True)
     birthday = models.DateField(blank=True, null=True)
-    joined_at = models.DateField(default=timezone.now)
+    joined_at = models.DateField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

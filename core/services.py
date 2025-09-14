@@ -44,7 +44,7 @@ class PointsService:
         Calculate points based on business configuration
         Default: 0.1 points per currency unit (1 point per $10)
         """
-        points = int(amount * business.points_per_currency)
+        points = int(amount * Decimal(str(business.points_per_currency)))
         return max(points, 0)  # Ensure non-negative points
     
     @staticmethod

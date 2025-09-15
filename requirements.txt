@@ -7,6 +7,9 @@ python-decouple==3.8
 sqlparse==0.5.3
 tzdata==2025.2
 
+# Telegram Bot
+python-telegram-bot[webhooks]==21.7
+
 # Testing dependencies
 pytest==8.4.2
 pytest-django==4.11.1

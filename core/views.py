@@ -1,11 +1,14 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponse
 from .models import Business, Client, LoyaltyAccount, Purchase, PointEvent
 from .serializers import (
     BusinessSerializer, ClientSerializer, LoyaltyAccountSerializer,
-    PurchaseSerializer, PointEventSerializer, PurchaseCreateSerializer
+    PurchaseSerializer, PointEventSerializer, PurchaseCreateSerializer,
+    PurchaseWithClientDataSerializer
 )
 from .services import ClientService, PointsService
 
@@ -105,3 +108,65 @@ class PointEventViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(source=source)
             
         return queryset.order_by('-occurred_at')
+
+
+class PurchaseWithClientDataView(APIView):
+    """
+    Endpoint for POS systems to create purchases with automatic client management
+    Supports Telegram notifications
+    """
+
+    def post(self, request):
+        """
+        Create a purchase with automatic client creation/update and optional Telegram notification
+
+        Expected payload:
+        {
+            "business_id": "uuid",
+            "amount": "100.00",
+            "currency": "MXN",
+            "client_name": "Juan Pérez",
+            "client_email": "juan@example.com",
+            "client_phone": "+52123456789",
+            "client_birthday": "1990-05-15",
+            "telegram_user_id": "123456789",
+            "send_telegram_notification": true
+        }
+        """
+        serializer = PurchaseWithClientDataSerializer(data=request.data)
+
+        if serializer.is_valid():
+            try:
+                result = serializer.save()
+
+                response_data = {
+                    'success': True,
+                    'message': 'Purchase created successfully',
+                    'purchase_id': str(result['purchase'].purchase_id),
+                    'client_id': str(result['client'].client_id),
+                    'created_new_client': result['created_new_client'],
+                    'points_earned': int(result['purchase'].amount * result['client'].business.points_per_currency),
+                    'client_points_balance': LoyaltyAccount.objects.get(client=result['client']).points_balance,
+                    'telegram_notification_sent': result['telegram_notification_sent'],
+                    'sms_notification_sent': result['sms_notification_sent']
+                }
+
+                return Response(response_data, status=status.HTTP_201_CREATED)
+
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'error': f'Error creating purchase: {str(e)}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'success': False,
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+def purchase_form_view(request):
+    """
+    Vista para mostrar el formulario de registro de compras
+    """
+    return render(request, 'purchase_form.html')

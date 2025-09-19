@@ -1,0 +1,11 @@
+{
+    "business_id": "1e2a0411-07ce-4ca2-a429-83b78d4396e2",
+    "amount": "200.00",
+    "currency": "MXN",
+    "client_name": "Test User con Telegram",
+    "client_email": "testuser@telegram.com",
+    "client_phone": "+52987654321",
+    "client_birthday": "1995-12-25",
+    "telegram_user_id": "YOUR_TELEGRAM_USER_ID",
+    "send_telegram_notification": true
+}

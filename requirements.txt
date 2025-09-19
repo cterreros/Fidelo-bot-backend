@@ -15,3 +15,9 @@ pytest==8.4.2
 pytest-django==4.11.1
 factory-boy==3.3.3
 pytest-cov==7.0.0
+
+# JWT Authentication
+djangorestframework-simplejwt==5.5.1
+
+# HTTP Requests for Telegram notifications
+requests==2.31.0

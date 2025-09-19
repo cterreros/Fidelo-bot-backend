@@ -1,0 +1,10 @@
+{
+    "business_id": "1e2a0411-07ce-4ca2-a429-83b78d4396e2",
+    "amount": "75.50",
+    "currency": "MXN",
+    "client_name": "Juan Pérez González",
+    "client_email": "juan.perez@gmail.com",
+    "client_phone": "+52123456789",
+    "telegram_user_id": "123456789",
+    "send_telegram_notification": false
+}

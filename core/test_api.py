@@ -1,6 +1,7 @@
 import pytest
 from decimal import Decimal
 from django.urls import reverse
+from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APIClient
 from datetime import date
@@ -9,10 +10,35 @@ from core.models import Business, Client, LoyaltyAccount, Purchase, PointEvent
 from conftest import BusinessFactory, ClientFactory, LoyaltyAccountFactory, PurchaseFactory
 
 
+def get_jwt_token(client, username='testuser', password='testpass123'):
+    """Helper function to get JWT token for tests"""
+    # Create user if it doesn't exist
+    user, created = User.objects.get_or_create(
+        username=username,
+        defaults={'email': 'test@example.com'}
+    )
+    if created:
+        user.set_password(password)
+        user.save()
+
+    # Get token
+    response = client.post('/auth/token/', {
+        'username': username,
+        'password': password
+    })
+
+    if response.status_code == 200:
+        return response.data['access']
+    return None
+
+
 @pytest.mark.django_db
 class TestBusinessAPI:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         
     def test_list_businesses(self):
         """Test listing businesses"""
@@ -22,11 +48,11 @@ class TestBusinessAPI:
         BusinessFactory(name="Inactive Business", is_active=False)  # Should be filtered
         
         response = self.client.get('/api/businesses/')
-        
+
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2  # Only active businesses
-        
-        names = [b['name'] for b in response.data]
+        assert response.data['count'] == 2  # Only active businesses
+
+        names = [b['name'] for b in response.data['results']]
         assert "Business 1" in names
         assert "Business 2" in names
         assert "Inactive Business" not in names
@@ -77,10 +103,13 @@ class TestBusinessAPI:
         assert response.data['birthday_bonus_points'] == 100
 
 
-@pytest.mark.django_db 
+@pytest.mark.django_db
 class TestClientAPI:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.business = BusinessFactory()
 
     def test_list_clients(self):
@@ -165,6 +194,9 @@ class TestClientAPI:
 class TestPurchaseAPI:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.business = BusinessFactory(points_per_currency=Decimal('0.1'))
         self.customer = ClientFactory(business=self.business)
 
@@ -222,6 +254,9 @@ class TestPurchaseAPI:
 class TestLoyaltyAccountAPI:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.business = BusinessFactory()
 
     def test_list_loyalty_accounts(self):
@@ -262,6 +297,9 @@ class TestLoyaltyAccountAPI:
 class TestPointEventAPI:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
         self.business = BusinessFactory()
         self.customer = ClientFactory(business=self.business)
 
@@ -299,10 +337,13 @@ class TestPointEventAPI:
         assert response.data[0]['source'] == 'birthday'
 
 
-@pytest.mark.django_db 
+@pytest.mark.django_db
 class TestAPIIntegration:
     def setup_method(self):
         self.client = APIClient()
+        # Authenticate with JWT
+        token = get_jwt_token(self.client)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_complete_loyalty_flow_via_api(self):
         """Test complete loyalty flow through API endpoints"""

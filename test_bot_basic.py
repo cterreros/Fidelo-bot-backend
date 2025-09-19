@@ -10,9 +10,11 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fidelo_backend.settings')
 django.setup()
 
+import pytest
 from core.models import Business, Client, LoyaltyAccount
 from telegram_bot.bot import FideloBot
 
+@pytest.mark.django_db
 def test_basic_functionality():
     """Test basic bot functionality without Telegram connection."""
     print("Testing FideloBot functionality...")

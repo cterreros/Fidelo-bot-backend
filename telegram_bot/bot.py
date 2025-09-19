@@ -1,9 +1,9 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
-    Application, 
-    CommandHandler, 
-    MessageHandler, 
+    Application,
+    CommandHandler,
+    MessageHandler,
     CallbackQueryHandler,
     filters,
     ContextTypes
@@ -12,6 +12,11 @@ from django.conf import settings
 from asgiref.sync import sync_to_async
 from core.models import Business, Client, LoyaltyAccount
 from core.services import ClientService, PurchaseService, PointsService
+from .advanced_bot_features import (
+    link_telegram_command, handle_link_callback, points_command,
+    loyalty_programs_callback, update_profile_callback, notifications_command,
+    test_notification_callback, admin_send_points
+)
 
 # Enable logging
 logging.basicConfig(
@@ -617,9 +622,14 @@ Bienvenido a **{business.name}**, {client.name}!
         self.application.add_handler(CommandHandler("businesses", self.businesses_command))
         self.application.add_handler(CommandHandler("register", self.register_command))
         self.application.add_handler(CommandHandler("profile", self.profile_command))
-        self.application.add_handler(CommandHandler("points", self.points_command))
+        self.application.add_handler(CommandHandler("points", points_command))
         self.application.add_handler(CommandHandler("history", self.history_command))
-        
+
+        # Advanced features
+        self.application.add_handler(CommandHandler("link_telegram", link_telegram_command))
+        self.application.add_handler(CommandHandler("notifications", notifications_command))
+        self.application.add_handler(CommandHandler("admin_points", admin_send_points))
+
         # Remove any existing purchase handler if it exists
         # No purchase command should be available for users
         
@@ -641,8 +651,26 @@ Bienvenido a **{business.name}**, {client.name}!
             pattern=r'^businesses$'
         ))
         self.application.add_handler(CallbackQueryHandler(
-            self.handle_history_callback, 
+            self.handle_history_callback,
             pattern=r'^history_'
+        ))
+
+        # Advanced callbacks
+        self.application.add_handler(CallbackQueryHandler(
+            handle_link_callback,
+            pattern=r'^link_'
+        ))
+        self.application.add_handler(CallbackQueryHandler(
+            loyalty_programs_callback,
+            pattern=r'^loyalty_programs$'
+        ))
+        self.application.add_handler(CallbackQueryHandler(
+            update_profile_callback,
+            pattern=r'^update_'
+        ))
+        self.application.add_handler(CallbackQueryHandler(
+            test_notification_callback,
+            pattern=r'^test_notification$'
         ))
         
         # Message handlers

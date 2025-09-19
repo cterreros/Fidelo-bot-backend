@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Compra - FideloBot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .business-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏪 Registro de Compra</h1>
+
+        <div class="business-info">
+            <h3>Cafetería El Buen Sabor</h3>
+            <p><strong>Programa de Lealtad:</strong></p>
+            <ul>
+                <li>0.1 puntos por cada peso gastado</li>
+                <li>100 puntos de regalo en tu cumpleaños</li>
+            </ul>
+        </div>
+
+        <form id="purchaseForm">
+            <div class="form-group">
+                <label for="amount">💰 Monto de la Compra (MXN):</label>
+                <input type="number" id="amount" name="amount" step="0.01" required placeholder="150.00">
+            </div>
+
+            <div class="form-group">
+                <label for="client_name">👤 Nombre del Cliente:</label>
+                <input type="text" id="client_name" name="client_name" required placeholder="Juan Pérez">
+            </div>
+
+            <div class="form-group">
+                <label for="client_email">📧 Email del Cliente:</label>
+                <input type="email" id="client_email" name="client_email" required placeholder="juan@example.com">
+            </div>
+
+            <div class="form-group">
+                <label for="client_phone">📱 Teléfono (opcional):</label>
+                <input type="tel" id="client_phone" name="client_phone" placeholder="+52123456789">
+            </div>
+
+            <div class="form-group">
+                <label for="client_birthday">🎂 Fecha de Cumpleaños (opcional):</label>
+                <input type="date" id="client_birthday" name="client_birthday">
+            </div>
+
+            <div class="form-group">
+                <label for="telegram_user_id">🤖 Telegram User ID (opcional):</label>
+                <input type="text" id="telegram_user_id" name="telegram_user_id" placeholder="123456789">
+                <small style="color: #666;">Si conoces el ID de Telegram del cliente, ingresalo para enviar notificación automática</small>
+            </div>
+
+            <div class="form-group">
+                <label>📱 Notificaciones:</label>
+                <div style="margin-top: 10px;">
+                    <label style="font-weight: normal; display: block; margin-bottom: 5px;">
+                        <input type="checkbox" id="send_sms_notification" name="send_sms_notification" checked>
+                        📲 Enviar SMS (recomendado para primer contacto)
+                    </label>
+                    <label style="font-weight: normal; display: block;">
+                        <input type="checkbox" id="send_telegram_notification" name="send_telegram_notification">
+                        🤖 Enviar Telegram (solo si tiene Telegram ID)
+                    </label>
+                </div>
+                <small style="color: #666;">SMS funciona como primer contacto. Telegram necesita que el cliente ya esté registrado.</small>
+            </div>
+
+            <button type="submit">🛍️ Registrar Compra</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('purchaseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const data = {
+                business_id: "0915a026-fbe3-46f7-af79-a15b179772aa",
+                amount: formData.get('amount'),
+                currency: "MXN",
+                client_name: formData.get('client_name'),
+                client_email: formData.get('client_email'),
+                client_phone: formData.get('client_phone') || null,
+                client_birthday: formData.get('client_birthday') || null,
+                telegram_user_id: formData.get('telegram_user_id') || null,
+                send_telegram_notification: document.getElementById('send_telegram_notification').checked,
+                send_sms_notification: document.getElementById('send_sms_notification').checked
+            };
+
+            // Remove empty values
+            Object.keys(data).forEach(key => {
+                if (data[key] === '' || data[key] === null) {
+                    delete data[key];
+                }
+            });
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Procesando compra...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch('/api/purchase-with-client/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ ¡Compra Registrada Exitosamente!</h3>
+                        <p><strong>ID de Compra:</strong> ${result.purchase_id}</p>
+                        <p><strong>Cliente:</strong> ${result.created_new_client ? 'Nuevo cliente creado' : 'Cliente existente'}</p>
+                        <p><strong>Puntos Ganados:</strong> ${result.points_earned} pts</p>
+                        <p><strong>Balance Total:</strong> ${result.client_points_balance} pts</p>
+                        <p><strong>Notificación SMS:</strong> ${result.sms_notification_sent ? '✅ Enviada' : '❌ No enviada'}</p>
+                        <p><strong>Notificación Telegram:</strong> ${result.telegram_notification_sent ? '✅ Enviada' : '❌ No enviada'}</p>
+                        ${result.sms_notification_sent ? '<p style="color: green;">📱 El cliente debería recibir un SMS con información de puntos!</p>' : ''}
+                        ${result.telegram_notification_sent ? '<p style="color: green;">🎉 El cliente debería recibir una notificación en Telegram!</p>' : ''}
+                        ${!result.sms_notification_sent && !result.telegram_notification_sent ? '<p style="color: orange;">💡 El cliente puede buscar el bot en Telegram para registrarse y recibir futuras notificaciones.</p>' : ''}
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Error al Registrar Compra</h3>
+                        <p>${result.error || JSON.stringify(result.errors)}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Error de Conexión</h3>
+                    <p>No se pudo conectar con el servidor: ${error.message}</p>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

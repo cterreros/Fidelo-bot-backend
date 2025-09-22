@@ -4,151 +4,991 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Compra - FideloBot</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --primary-hover: #5a6fd8;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --info-color: #3b82f6;
+            --background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-background: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --border-radius: 16px;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--background);
+            min-height: 100vh;
             padding: 20px;
-            background-color: #f5f5f5;
+            line-height: 1.6;
         }
+
         .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 480px;
+            margin: 0 auto;
+            background: var(--card-background);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
+
         h1 {
-            color: #2c3e50;
+            color: var(--text-primary);
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            position: relative;
         }
+
         label {
             display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #34495e;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
         }
+
         input, select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
             font-size: 16px;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: white;
         }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        input:hover, select:hover {
+            border-color: var(--primary-hover);
+        }
+
         button {
             width: 100%;
-            padding: 15px;
-            background-color: #3498db;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
             color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 18px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            letter-spacing: 0.025em;
+            box-shadow: var(--shadow-md);
         }
+
         button:hover {
-            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
         }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
+            margin-top: 24px;
+            padding: 20px;
+            border-radius: 12px;
             display: none;
+            border-left: 4px solid;
+            animation: slideInUp 0.3s ease;
         }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
         }
+
         .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+            color: var(--error-color);
+            border-left-color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
+
         .business-info {
-            background-color: #e3f2fd;
-            padding: 15px;
-            border-radius: 5px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-left: 4px solid var(--info-color);
+        }
+
+        .business-info h3 {
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .business-info ul {
+            margin-left: 20px;
+            color: var(--text-secondary);
+        }
+
+        .business-info li {
+            margin-bottom: 4px;
+        }
+
+        .client-found {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+            color: var(--info-color);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid var(--info-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .client-new {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid var(--warning-color);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .client-checking {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+            color: var(--info-color);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 16px;
+            border-radius: 12px;
+            border-left: 4px solid var(--info-color);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .login-section {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            text-align: center;
+        }
+
+        .login-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .login-section p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .logout-btn {
+            width: auto !important;
+            padding: 8px 16px !important;
+            font-size: 14px !important;
+            background: linear-gradient(135deg, var(--warning-color), #f97316) !important;
+            font-weight: 500 !important;
+            border-radius: 8px !important;
+        }
+
+        .logout-btn:hover {
+            background: linear-gradient(135deg, #f97316, #ea580c) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        #purchaseForm {
+            display: none;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .show-form #purchaseForm {
+            display: block;
+        }
+
+        small {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            .container {
+                margin: 0;
+                padding: 24px;
+                border-radius: 0;
+                min-height: 100vh;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            input, select, button {
+                padding: 14px;
+            }
+        }
+
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid transparent;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Enhanced Focus States */
+        button:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--card-background);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transform: scale(0.9) translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 24px 24px 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 0 24px 24px;
+        }
+
+        .modal-info-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-left: 4px solid var(--success-color);
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
+        }
+
+        .modal-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+        }
+
+        .modal-info-row:last-child {
+            border-bottom: none;
+        }
+
+        .modal-info-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .modal-info-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .modal-points {
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 16px 0;
+        }
+
+        .modal-footer {
+            padding: 0 24px 24px;
+            display: flex;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+        .modal-btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            letter-spacing: 0.025em;
+            box-shadow: var(--shadow-md);
+        }
+
+        .modal-btn-primary {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+
+        .modal-btn-secondary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+        }
+
+        .modal-btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            background: linear-gradient(135deg, var(--primary-hover), var(--secondary-color));
+        }
+
+        .modal-notification-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .modal-notification-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .modal-notification-error {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .modal-footer {
+                flex-direction: column;
+            }
+
+            .modal-btn {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏪 Registro de Compra</h1>
+        <h1><i class="fas fa-store"></i> Registro de Compra</h1>
 
-        <div class="business-info">
-            <h3>Cafetería El Buen Sabor</h3>
-            <p><strong>Programa de Lealtad:</strong></p>
-            <ul>
-                <li>0.1 puntos por cada peso gastado</li>
-                <li>100 puntos de regalo en tu cumpleaños</li>
-            </ul>
+        <!-- Business Authentication Section -->
+        <div id="business-auth">
+            {% if current_business %}
+                <div class="business-info">
+                    <h3>{{ current_business.name }}</h3>
+                    <p><strong>Programa de Lealtad:</strong></p>
+                    <ul>
+                        <li>{{ current_business.points_per_currency }} puntos por cada peso gastado</li>
+                        <li>{{ current_business.birthday_bonus_points }} puntos de regalo en tu cumpleaños</li>
+                    </ul>
+                    <div style="text-align: right; margin-top: 10px;">
+                        <button type="button" id="logout-btn" class="logout-btn"><i class="fas fa-unlock"></i> Cambiar Negocio</button>
+                    </div>
+                </div>
+            {% else %}
+                <div class="login-section">
+                    <h3><i class="fas fa-lock"></i> Selecciona tu Negocio</h3>
+                    <p>Para registrar compras, primero selecciona el negocio:</p>
+
+                    <div class="form-group">
+                        <label for="business_select"><i class="fas fa-store"></i> Negocio:</label>
+                        <select id="business_select" required>
+                            <option value="">Selecciona un negocio...</option>
+                            {% for business in businesses %}
+                                <option value="{{ business.business_id }}">{{ business.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button type="button" id="login-btn"><i class="fas fa-rocket"></i> Acceder al POS</button>
+                </div>
+            {% endif %}
         </div>
 
         <form id="purchaseForm">
             <div class="form-group">
-                <label for="amount">💰 Monto de la Compra (MXN):</label>
+                <label for="amount"><i class="fas fa-dollar-sign"></i> Monto de la Compra (MXN):</label>
                 <input type="number" id="amount" name="amount" step="0.01" required placeholder="150.00">
             </div>
 
             <div class="form-group">
-                <label for="client_name">👤 Nombre del Cliente:</label>
-                <input type="text" id="client_name" name="client_name" required placeholder="Juan Pérez">
+                <label for="client_phone"><i class="fas fa-phone"></i> Teléfono del Cliente:</label>
+                <input type="tel" id="client_phone" name="client_phone" required placeholder="+52123456789">
+                <div id="client_status" style="margin-top: 10px; display: none;"></div>
+                <small style="color: #666;">
+                    Ingresa el teléfono para verificar si el cliente ya está registrado.
+                </small>
             </div>
 
-            <div class="form-group">
-                <label for="client_email">📧 Email del Cliente:</label>
-                <input type="email" id="client_email" name="client_email" required placeholder="juan@example.com">
-            </div>
-
-            <div class="form-group">
-                <label for="client_phone">📱 Teléfono (opcional):</label>
-                <input type="tel" id="client_phone" name="client_phone" placeholder="+52123456789">
-            </div>
-
-            <div class="form-group">
-                <label for="client_birthday">🎂 Fecha de Cumpleaños (opcional):</label>
-                <input type="date" id="client_birthday" name="client_birthday">
-            </div>
-
-            <div class="form-group">
-                <label for="telegram_user_id">🤖 Telegram User ID (opcional):</label>
-                <input type="text" id="telegram_user_id" name="telegram_user_id" placeholder="123456789">
-                <small style="color: #666;">Si conoces el ID de Telegram del cliente, ingresalo para enviar notificación automática</small>
-            </div>
-
-            <div class="form-group">
-                <label>📱 Notificaciones:</label>
-                <div style="margin-top: 10px;">
-                    <label style="font-weight: normal; display: block; margin-bottom: 5px;">
-                        <input type="checkbox" id="send_sms_notification" name="send_sms_notification" checked>
-                        📲 Enviar SMS (recomendado para primer contacto)
-                    </label>
-                    <label style="font-weight: normal; display: block;">
-                        <input type="checkbox" id="send_telegram_notification" name="send_telegram_notification">
-                        🤖 Enviar Telegram (solo si tiene Telegram ID)
-                    </label>
+            <!-- Campos para clientes nuevos (ocultos por defecto) -->
+            <div id="new_client_fields" style="display: none;">
+                <div class="form-group">
+                    <label for="client_name"><i class="fas fa-user"></i> Nombre del Cliente:</label>
+                    <input type="text" id="client_name" name="client_name" placeholder="Juan Pérez">
+                    <small style="color: #666;">Necesario para registrar cliente nuevo</small>
                 </div>
-                <small style="color: #666;">SMS funciona como primer contacto. Telegram necesita que el cliente ya esté registrado.</small>
+
+                <div class="form-group">
+                    <label for="client_email"><i class="fas fa-envelope"></i> Email del Cliente:</label>
+                    <input type="email" id="client_email" name="client_email" placeholder="juan@example.com">
+                    <small style="color: #666;">Para futuras comunicaciones</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="client_birthday"><i class="fas fa-birthday-cake"></i> Fecha de Cumpleaños:</label>
+                    <input type="date" id="client_birthday" name="client_birthday">
+                    <small style="color: #666;">Para recibir puntos de regalo en su cumpleaños</small>
+                </div>
             </div>
 
-            <button type="submit">🛍️ Registrar Compra</button>
+            <!-- Notificaciones automáticas (oculto) -->
+            <div id="notification_settings" style="display: none;">
+                <div class="form-group">
+                    <div id="notification_info" style="padding: 10px; border-radius: 5px; margin-bottom: 10px;"></div>
+                </div>
+            </div>
+
+            <!-- Checkboxes ocultos para el envío -->
+            <input type="checkbox" id="send_sms_notification" name="send_sms_notification" style="display: none;">
+            <input type="checkbox" id="send_telegram_notification" name="send_telegram_notification" style="display: none;">
+
+            <button type="submit"><i class="fas fa-shopping-bag"></i> Registrar Compra</button>
         </form>
 
         <div id="result" class="result"></div>
     </div>
 
+    <!-- Modal for purchase confirmation -->
+    <div id="purchaseModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title"><i class="fas fa-check-circle"></i> ¡Compra Registrada!</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Purchase details will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="confirmModal"><i class="fas fa-check"></i> Confirmar</button>
+                <button class="modal-btn modal-btn-secondary" id="newPurchaseModal"><i class="fas fa-plus"></i> Nueva Compra</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let clientSearchTimeout;
+        let currentClientData = null;
+
+        // Phone input event listener for client lookup
+        document.getElementById('client_phone').addEventListener('input', function(e) {
+            const phone = e.target.value.trim();
+            const statusDiv = document.getElementById('client_status');
+
+            // Clear previous timeout
+            clearTimeout(clientSearchTimeout);
+
+            if (phone.length < 8) {
+                statusDiv.style.display = 'none';
+                hideAllFields();
+                return;
+            }
+
+            // Show checking status
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'client-checking';
+            statusDiv.innerHTML = '<i class="fas fa-search fa-spin"></i> Buscando cliente...';
+
+            // Debounce the search
+            clientSearchTimeout = setTimeout(async () => {
+                await searchClient(phone);
+            }, 500);
+        });
+
+        async function searchClient(phone) {
+            const statusDiv = document.getElementById('client_status');
+            const newClientFields = document.getElementById('new_client_fields');
+            const notificationSettings = document.getElementById('notification_settings');
+            const notificationInfo = document.getElementById('notification_info');
+
+            try {
+                const response = await fetch(`/api/clients/?business_id=0915a026-fbe3-46f7-af79-a15b179772aa&phone=${encodeURIComponent(phone)}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.results && data.results.length > 0) {
+                        const client = data.results[0];
+                        currentClientData = client;
+
+                        // Check if client has Telegram
+                        const hasTelegram = client.email && client.email.startsWith('telegram_') && client.email.endsWith('@fidelo.local');
+
+                        // CLIENTE EXISTENTE
+                        statusDiv.className = 'client-found';
+                        statusDiv.innerHTML = `
+                            <i class="fas fa-info-circle"></i> <strong>Cliente registrado:</strong> ${client.name}<br>
+                            <i class="fas fa-envelope"></i> ${client.email}<br>
+                            <i class="fas fa-calendar"></i> Miembro desde: ${new Date(client.joined_at).toLocaleDateString('es-ES')}
+                        `;
+
+                        // Ocultar campos de cliente nuevo
+                        newClientFields.style.display = 'none';
+
+                        // Mostrar información de notificación
+                        notificationSettings.style.display = 'block';
+                        if (hasTelegram) {
+                            notificationInfo.className = 'client-found';
+                            notificationInfo.innerHTML = '<i class="fab fa-telegram"></i> <strong>Notificación automática por Telegram</strong><br>El cliente recibirá la confirmación de compra en Telegram.';
+                            document.getElementById('send_telegram_notification').checked = true;
+                            document.getElementById('send_sms_notification').checked = false;
+                        } else {
+                            notificationInfo.className = 'client-found';
+                            notificationInfo.innerHTML = '<i class="fas fa-sms"></i> <strong>Notificación automática por SMS</strong><br>El cliente recibirá la confirmación de compra por SMS.';
+                            document.getElementById('send_telegram_notification').checked = false;
+                            document.getElementById('send_sms_notification').checked = true;
+                        }
+
+                    } else {
+                        // CLIENTE NUEVO
+                        handleNewClient();
+                    }
+                } else {
+                    throw new Error('Error en la búsqueda');
+                }
+            } catch (error) {
+                // CLIENTE NUEVO (error en búsqueda)
+                handleNewClient();
+            }
+        }
+
+        function handleNewClient() {
+            const statusDiv = document.getElementById('client_status');
+            const newClientFields = document.getElementById('new_client_fields');
+            const notificationSettings = document.getElementById('notification_settings');
+            const notificationInfo = document.getElementById('notification_info');
+
+            currentClientData = null;
+
+            statusDiv.className = 'client-new';
+            statusDiv.innerHTML = '<i class="fas fa-star"></i> <strong>Cliente nuevo</strong><br>Complete los datos para registrar al cliente.';
+
+            // Mostrar campos de cliente nuevo
+            newClientFields.style.display = 'block';
+
+            // Hacer el nombre obligatorio para clientes nuevos
+            document.getElementById('client_name').required = true;
+
+            // Mostrar información de notificación para cliente nuevo
+            notificationSettings.style.display = 'block';
+            notificationInfo.className = 'client-new';
+            notificationInfo.innerHTML = '<i class="fas fa-sms"></i> <strong>Notificación por SMS</strong><br>Se enviará SMS al cliente con información del programa de lealtad.';
+
+            // Default a SMS para clientes nuevos
+            document.getElementById('send_telegram_notification').checked = false;
+            document.getElementById('send_sms_notification').checked = true;
+        }
+
+        function hideAllFields() {
+            document.getElementById('new_client_fields').style.display = 'none';
+            document.getElementById('notification_settings').style.display = 'none';
+            document.getElementById('client_name').required = false;
+            currentClientData = null;
+        }
+
+
+        // Business login/logout functionality
+        let currentBusinessId = '{{ current_business.business_id|default:"" }}';
+
+        // Show or hide form based on login status
+        {% if current_business %}
+            document.body.classList.add('show-form');
+        {% endif %}
+
+        // Login button handler
+        const loginBtn = document.getElementById('login-btn');
+        if (loginBtn) {
+            loginBtn.addEventListener('click', async function() {
+                const businessSelect = document.getElementById('business_select');
+                const businessId = businessSelect.value;
+
+                if (!businessId) {
+                    alert('Por favor selecciona un negocio');
+                    return;
+                }
+
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Accediendo...';
+                this.disabled = true;
+
+                try {
+                    const response = await fetch(window.location.href, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: `action=login&business_id=${businessId}`
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Reload page to show business interface
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + result.error);
+                        this.innerHTML = '<i class="fas fa-rocket"></i> Acceder al POS';
+                        this.disabled = false;
+                    }
+                } catch (error) {
+                    alert('Error de conexión: ' + error.message);
+                    this.innerHTML = '<i class="fas fa-rocket"></i> Acceder al POS';
+                    this.disabled = false;
+                }
+            });
+        }
+
+        // Logout button handler
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function() {
+                if (!confirm('¿Seguro que quieres cambiar de negocio?')) {
+                    return;
+                }
+
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cerrando...';
+                this.disabled = true;
+
+                try {
+                    const response = await fetch(window.location.href, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: 'action=logout'
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Reload page to show business selection
+                        window.location.reload();
+                    } else {
+                        alert('Error al cerrar sesión');
+                        this.innerHTML = '<i class="fas fa-unlock"></i> Cambiar Negocio';
+                        this.disabled = false;
+                    }
+                } catch (error) {
+                    alert('Error de conexión: ' + error.message);
+                    this.innerHTML = '<i class="fas fa-unlock"></i> Cambiar Negocio';
+                    this.disabled = false;
+                }
+            });
+        }
+
+        // Update business_id in form submission
+        if (currentBusinessId) {
+            // Update the hardcoded business_id in form submission
+            const originalSubmitHandler = document.getElementById('purchaseForm').onsubmit;
+            document.getElementById('purchaseForm').addEventListener('submit', function(e) {
+                // This will override the hardcoded business_id
+                currentBusinessId = '{{ current_business.business_id|default:"" }}';
+            });
+
+            // Update client search to use current business
+            const originalSearchClient = searchClient;
+            searchClient = async function(phone) {
+                const statusDiv = document.getElementById('client_status');
+                const newClientFields = document.getElementById('new_client_fields');
+                const notificationSettings = document.getElementById('notification_settings');
+                const notificationInfo = document.getElementById('notification_info');
+
+                try {
+                    const response = await fetch(`/api/clients/?business_id=${currentBusinessId}&phone=${encodeURIComponent(phone)}`);
+                    // ... rest of the original function stays the same
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        if (data.results && data.results.length > 0) {
+                            const client = data.results[0];
+                            currentClientData = client;
+
+                            // Check if client has Telegram
+                            const hasTelegram = client.email && client.email.startsWith('telegram_') && client.email.endsWith('@fidelo.local');
+
+                            // CLIENTE EXISTENTE
+                            statusDiv.className = 'client-found';
+                            statusDiv.innerHTML = `
+                                <i class="fas fa-info-circle"></i> <strong>Cliente registrado:</strong> ${client.name}<br>
+                                <i class="fas fa-envelope"></i> ${client.email}<br>
+                                <i class="fas fa-calendar"></i> Miembro desde: ${new Date(client.joined_at).toLocaleDateString('es-ES')}
+                            `;
+
+                            // Ocultar campos de cliente nuevo
+                            newClientFields.style.display = 'none';
+
+                            // Mostrar información de notificación
+                            notificationSettings.style.display = 'block';
+                            if (hasTelegram) {
+                                notificationInfo.className = 'client-found';
+                                notificationInfo.innerHTML = '<i class="fab fa-telegram"></i> <strong>Notificación automática por Telegram</strong><br>El cliente recibirá la confirmación de compra en Telegram.';
+                                document.getElementById('send_telegram_notification').checked = true;
+                                document.getElementById('send_sms_notification').checked = false;
+                            } else {
+                                notificationInfo.className = 'client-found';
+                                notificationInfo.innerHTML = '<i class="fas fa-sms"></i> <strong>Notificación automática por SMS</strong><br>El cliente recibirá la confirmación de compra por SMS.';
+                                document.getElementById('send_telegram_notification').checked = false;
+                                document.getElementById('send_sms_notification').checked = true;
+                            }
+
+                        } else {
+                            // CLIENTE NUEVO
+                            handleNewClient();
+                        }
+                    } else {
+                        throw new Error('Error en la búsqueda');
+                    }
+                } catch (error) {
+                    // CLIENTE NUEVO (error en búsqueda)
+                    handleNewClient();
+                }
+            };
+        }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Update form submission to use current business
         document.getElementById('purchaseForm').addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const formData = new FormData(e.target);
             const data = {
-                business_id: "0915a026-fbe3-46f7-af79-a15b179772aa",
+                business_id: currentBusinessId || '{{ current_business.business_id|default:"" }}',
                 amount: formData.get('amount'),
                 currency: "MXN",
                 client_name: formData.get('client_name'),
@@ -169,7 +1009,7 @@
 
             const resultDiv = document.getElementById('result');
             resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '⏳ Procesando compra...';
+            resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando compra...';
             resultDiv.className = 'result';
 
             try {
@@ -183,33 +1023,154 @@
 
                 const result = await response.json();
 
+                // Hide loading state
+                resultDiv.style.display = 'none';
+
                 if (result.success) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = `
-                        <h3>✅ ¡Compra Registrada Exitosamente!</h3>
-                        <p><strong>ID de Compra:</strong> ${result.purchase_id}</p>
-                        <p><strong>Cliente:</strong> ${result.created_new_client ? 'Nuevo cliente creado' : 'Cliente existente'}</p>
-                        <p><strong>Puntos Ganados:</strong> ${result.points_earned} pts</p>
-                        <p><strong>Balance Total:</strong> ${result.client_points_balance} pts</p>
-                        <p><strong>Notificación SMS:</strong> ${result.sms_notification_sent ? '✅ Enviada' : '❌ No enviada'}</p>
-                        <p><strong>Notificación Telegram:</strong> ${result.telegram_notification_sent ? '✅ Enviada' : '❌ No enviada'}</p>
-                        ${result.sms_notification_sent ? '<p style="color: green;">📱 El cliente debería recibir un SMS con información de puntos!</p>' : ''}
-                        ${result.telegram_notification_sent ? '<p style="color: green;">🎉 El cliente debería recibir una notificación en Telegram!</p>' : ''}
-                        ${!result.sms_notification_sent && !result.telegram_notification_sent ? '<p style="color: orange;">💡 El cliente puede buscar el bot en Telegram para registrarse y recibir futuras notificaciones.</p>' : ''}
-                    `;
+                    // Show success modal
+                    showPurchaseModal(result, data);
                 } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = `
-                        <h3>❌ Error al Registrar Compra</h3>
-                        <p>${result.error || JSON.stringify(result.errors)}</p>
-                    `;
+                    // Show error modal
+                    showErrorModal(result.error || JSON.stringify(result.errors));
                 }
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = `
-                    <h3>❌ Error de Conexión</h3>
-                    <p>No se pudo conectar con el servidor: ${error.message}</p>
-                `;
+                // Hide loading state
+                resultDiv.style.display = 'none';
+                // Show error modal
+                showErrorModal(`No se pudo conectar con el servidor: ${error.message}`);
+            }
+        });
+
+        // Modal functions
+        function showPurchaseModal(result, formData) {
+            const modal = document.getElementById('purchaseModal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            // Determine client name
+            let clientName = 'Cliente';
+            if (currentClientData && currentClientData.name) {
+                clientName = currentClientData.name;
+            } else if (formData.client_name) {
+                clientName = formData.client_name;
+            }
+
+            // Update modal title
+            modalTitle.innerHTML = `<i class="fas fa-check-circle"></i> ¡Compra de ${clientName} registrada!`;
+
+            // Create modal content
+            modalBody.innerHTML = `
+                <div class="modal-info-card">
+                    <div class="modal-info-row">
+                        <span class="modal-info-label"><i class="fas fa-user"></i> Cliente:</span>
+                        <span class="modal-info-value">${clientName}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label"><i class="fas fa-dollar-sign"></i> Monto:</span>
+                        <span class="modal-info-value">$${formData.amount} MXN</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label"><i class="fas fa-phone"></i> Teléfono:</span>
+                        <span class="modal-info-value">${formData.client_phone}</span>
+                    </div>
+                    <div class="modal-info-row">
+                        <span class="modal-info-label"><i class="fas fa-info-circle"></i> Estado:</span>
+                        <span class="modal-info-value">${result.created_new_client ? '<i class="fas fa-star"></i> Cliente nuevo creado' : '<i class="fas fa-check"></i> Cliente existente'}</span>
+                    </div>
+                </div>
+
+                <div class="modal-points">
+                    +${result.points_earned} puntos ganados
+                </div>
+
+                <div class="modal-info-card">
+                    <div class="modal-info-row">
+                        <span class="modal-info-label"><i class="fas fa-gem"></i> Balance total:</span>
+                        <span class="modal-info-value">${result.client_points_balance} pts</span>
+                    </div>
+                </div>
+
+                ${result.sms_notification_sent ?
+                    '<div class="modal-notification-status modal-notification-success"><i class="fas fa-sms"></i> SMS enviado correctamente</div>' :
+                    '<div class="modal-notification-status modal-notification-error"><i class="fas fa-sms"></i> SMS no enviado</div>'
+                }
+
+                ${result.telegram_notification_sent ?
+                    '<div class="modal-notification-status modal-notification-success"><i class="fab fa-telegram"></i> Notificación de Telegram enviada</div>' :
+                    result.created_new_client ?
+                        '<div class="modal-notification-status modal-notification-error"><i class="fab fa-telegram"></i> El cliente puede registrarse en Telegram para futuras notificaciones</div>' :
+                        '<div class="modal-notification-status modal-notification-error"><i class="fab fa-telegram"></i> Notificación de Telegram no enviada</div>'
+                }
+            `;
+
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        function showErrorModal(errorMessage) {
+            const modal = document.getElementById('purchaseModal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+
+            // Update modal for error
+            modalTitle.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error al Registrar Compra';
+            modalTitle.style.background = 'linear-gradient(135deg, var(--error-color), #dc2626)';
+            modalTitle.style.webkitBackgroundClip = 'text';
+            modalTitle.style.webkitTextFillColor = 'transparent';
+
+            modalBody.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05)); border: 1px solid rgba(239, 68, 68, 0.2); border-left: 4px solid var(--error-color); border-radius: 12px; padding: 20px;">
+                    <p style="color: var(--error-color); font-weight: 500; margin: 0;">${errorMessage}</p>
+                </div>
+            `;
+
+            // Show modal
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('purchaseModal');
+            const modalTitle = document.getElementById('modal-title');
+
+            modal.classList.remove('active');
+
+            // Reset modal title style
+            modalTitle.style.background = 'linear-gradient(135deg, var(--success-color), #059669)';
+            modalTitle.style.webkitBackgroundClip = 'text';
+            modalTitle.style.webkitTextFillColor = 'transparent';
+        }
+
+        function resetForm() {
+            document.getElementById('purchaseForm').reset();
+            hideAllFields();
+            document.getElementById('client_status').style.display = 'none';
+            currentClientData = null;
+        }
+
+        // Modal event listeners
+        document.getElementById('closeModal').addEventListener('click', closeModal);
+
+        document.getElementById('confirmModal').addEventListener('click', function() {
+            closeModal();
+            resetForm();
+        });
+
+        document.getElementById('newPurchaseModal').addEventListener('click', function() {
+            closeModal();
+            resetForm();
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('purchaseModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
             }
         });
     </script>

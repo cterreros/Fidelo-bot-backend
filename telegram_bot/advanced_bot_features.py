@@ -203,7 +203,7 @@ Ahora recibirás notificaciones automáticas cuando:
 
             # Add action buttons
             keyboard = [
-                [InlineKeyboardButton("📊 Historial Completo", callback_data="full_history")],
+                [InlineKeyboardButton("📊 Ver Historial", callback_data="show_history")],
                 [InlineKeyboardButton("🎁 Programas de Lealtad", callback_data="loyalty_programs")],
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -412,6 +412,159 @@ Recibirás mensajes como este cuando:
             logger.error(f"Error in admin_send_points: {e}")
             await update.message.reply_text("❌ Error otorgando puntos.")
 
+    @staticmethod
+    async def show_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Show user's complete points history across all businesses"""
+        query = update.callback_query
+        await query.answer()
+
+        user = update.effective_user
+        telegram_id = user.id
+
+        try:
+            clients = await sync_to_async(list)(
+                Client.objects.filter(email=f"telegram_{telegram_id}@fidelo.local")
+            )
+
+            if not clients:
+                await query.edit_message_text("🚫 No estás registrado en ningún negocio.")
+                return
+
+            message = "📊 **Tu Historial Completo de Puntos:**\n\n"
+            has_events = False
+
+            for client in clients:
+                try:
+                    business_name = await sync_to_async(lambda: client.business.name)()
+
+                    # Get recent point events
+                    events = await sync_to_async(list)(
+                        PointEvent.objects.filter(client=client).order_by('-occurred_at')[:10]
+                    )
+
+                    if events:
+                        has_events = True
+                        message += f"🏪 **{business_name}**\n"
+                        for event in events:
+                            event_type = "➕" if event.points > 0 else "➖"
+                            source_emoji = {
+                                'purchase': '🛍️',
+                                'birthday': '🎂',
+                                'adjustment': '⚙️'
+                            }.get(event.source, '📝')
+
+                            message += f"   {event_type} **{event.points} pts** - {source_emoji} {event.get_source_display()}\n"
+                            if event.note:
+                                message += f"      📝 {event.note}\n"
+                            message += f"      📅 {event.occurred_at.strftime('%d/%m/%Y %H:%M')}\n\n"
+                        message += "\n"
+
+                except Exception as e:
+                    logger.error(f"Error getting events for client: {e}")
+                    continue
+
+            if not has_events:
+                message += "📝 **No tienes eventos de puntos aún.**\n\n"
+                message += "Los puntos aparecerán aquí cuando:\n"
+                message += "• Realices compras en los negocios\n"
+                message += "• Recibas bonificaciones especiales\n"
+                message += "• Sea tu cumpleaños 🎂"
+
+            keyboard = [
+                [InlineKeyboardButton("⬅️ Volver a Puntos", callback_data="back_to_points")],
+                [InlineKeyboardButton("🏪 Ver Negocios", callback_data="businesses")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await query.edit_message_text(
+                message,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Error in show_history_callback: {e}")
+            await query.edit_message_text("❌ Error al consultar tu historial.")
+
+    @staticmethod
+    async def back_to_points_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Go back to points view"""
+        query = update.callback_query
+        await query.answer()
+
+        user = update.effective_user
+        telegram_id = user.id
+
+        try:
+            clients = await sync_to_async(list)(
+                Client.objects.filter(email=f"telegram_{telegram_id}@fidelo.local")
+            )
+
+            if not clients:
+                await query.edit_message_text(
+                    "🚫 No estás registrado en ningún negocio.\n\n"
+                    "Opciones:\n"
+                    "• Usa /start para registrarte\n"
+                    "• Usa /link_telegram para vincular tu cuenta existente\n"
+                    "• Contacta al negocio para más ayuda"
+                )
+                return
+
+            message = "💎 **Tu Balance de Puntos:**\n\n"
+            total_points = 0
+
+            for client in clients:
+                try:
+                    business_name = await sync_to_async(lambda: client.business.name)()
+                    account = await sync_to_async(LoyaltyAccount.objects.get)(client=client)
+
+                    message += f"🏪 **{business_name}**\n"
+                    message += f"   💰 Balance: **{account.points_balance}** pts\n"
+
+                    # Get recent point events
+                    recent_events = await sync_to_async(list)(
+                        PointEvent.objects.filter(client=client).order_by('-occurred_at')[:3]
+                    )
+
+                    if recent_events:
+                        message += "   📊 Últimas actividades:\n"
+                        for event in recent_events:
+                            sign = "+" if event.points > 0 else ""
+                            source_emoji = {
+                                'purchase': '🛍️',
+                                'birthday': '🎂',
+                                'adjustment': '⚙️'
+                            }.get(event.source, '📝')
+                            message += f"      {source_emoji} {sign}{event.points} pts - {event.get_source_display()}\n"
+
+                    message += "\n"
+                    total_points += account.points_balance
+
+                except LoyaltyAccount.DoesNotExist:
+                    business_name = await sync_to_async(lambda: client.business.name)()
+                    message += f"🏪 **{business_name}**\n"
+                    message += "   💰 Balance: **0** pts\n\n"
+
+            if len(clients) > 1:
+                message += f"🎯 **Total en todos los negocios:** {total_points} pts\n\n"
+
+            # Add action buttons
+            keyboard = [
+                [InlineKeyboardButton("📊 Ver Historial", callback_data="show_history")],
+                [InlineKeyboardButton("🎁 Programas de Lealtad", callback_data="loyalty_programs")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await query.edit_message_text(
+                message,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Error in back_to_points_callback: {e}")
+            await query.edit_message_text("❌ Error consultando tus puntos.")
+
 
 # Export functions for easy import
 link_telegram_command = AdvancedBotFeatures.link_telegram_command
@@ -422,3 +575,5 @@ update_profile_callback = AdvancedBotFeatures.update_profile_callback
 notifications_command = AdvancedBotFeatures.notifications_command
 test_notification_callback = AdvancedBotFeatures.test_notification_callback
 admin_send_points = AdvancedBotFeatures.admin_send_points
+show_history_callback = AdvancedBotFeatures.show_history_callback
+back_to_points_callback = AdvancedBotFeatures.back_to_points_callback

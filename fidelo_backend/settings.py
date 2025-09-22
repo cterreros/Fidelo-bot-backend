@@ -133,13 +133,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
 TELEGRAM_WEBHOOK_URL = config('TELEGRAM_WEBHOOK_URL', default='')
 
-# Twilio SMS Configuration
-TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
-TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
-TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+# Twilio SMS Configuration - TEMPORARILY DISABLED
+# TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
+# TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
+# TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
 
-# SMS Mode: 'development' (simulate) or 'production' (real SMS)
-SMS_MODE = config('SMS_MODE', default='development')
+# SMS Mode: 'development' (simulate) or 'production' (real SMS) - DISABLED
+# SMS_MODE = config('SMS_MODE', default='development')
 
 # Django REST Framework Configuration
 REST_FRAMEWORK = {

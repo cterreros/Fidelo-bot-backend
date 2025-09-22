@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .models import Business, Client, LoyaltyAccount, Purchase, PointEvent
 from .serializers import (
     BusinessSerializer, ClientSerializer, LoyaltyAccountSerializer,
@@ -27,10 +27,17 @@ class ClientViewSet(viewsets.ModelViewSet):
     serializer_class = ClientSerializer
     
     def get_queryset(self):
+        queryset = Client.objects.all()
         business_id = self.request.query_params.get('business_id')
+        phone = self.request.query_params.get('phone')
+
         if business_id:
-            return Client.objects.filter(business__business_id=business_id)
-        return Client.objects.all()
+            queryset = queryset.filter(business__business_id=business_id)
+
+        if phone:
+            queryset = queryset.filter(phone=phone)
+
+        return queryset
     
     def perform_create(self, serializer):
         client = ClientService.create_client_with_account(**serializer.validated_data)
@@ -167,6 +174,49 @@ class PurchaseWithClientDataView(APIView):
 
 def purchase_form_view(request):
     """
-    Vista para mostrar el formulario de registro de compras
+    Vista para mostrar el formulario de registro de compras con autenticación por negocio
     """
-    return render(request, 'purchase_form.html')
+    # Handle business login/logout
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'login':
+            business_id = request.POST.get('business_id')
+            try:
+                business = Business.objects.get(business_id=business_id, is_active=True)
+                request.session['current_business_id'] = str(business.business_id)
+                request.session['current_business_name'] = business.name
+                return JsonResponse({
+                    'success': True,
+                    'business_name': business.name,
+                    'business_id': str(business.business_id)
+                })
+            except Business.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Negocio no encontrado'})
+
+        elif action == 'logout':
+            request.session.pop('current_business_id', None)
+            request.session.pop('current_business_name', None)
+            return JsonResponse({'success': True})
+
+    # Get current business from session
+    current_business = None
+    current_business_id = request.session.get('current_business_id')
+
+    if current_business_id:
+        try:
+            current_business = Business.objects.get(business_id=current_business_id, is_active=True)
+        except Business.DoesNotExist:
+            # Clear invalid session
+            request.session.pop('current_business_id', None)
+            request.session.pop('current_business_name', None)
+
+    # Get all available businesses
+    businesses = Business.objects.filter(is_active=True).order_by('name')
+
+    context = {
+        'current_business': current_business,
+        'businesses': businesses,
+    }
+
+    return render(request, 'purchase_form.html', context)

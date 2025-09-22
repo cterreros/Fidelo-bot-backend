@@ -10,12 +10,13 @@ from telegram.ext import (
 )
 from django.conf import settings
 from asgiref.sync import sync_to_async
-from core.models import Business, Client, LoyaltyAccount
+from core.models import Business, Client, LoyaltyAccount, Purchase
 from core.services import ClientService, PurchaseService, PointsService
 from .advanced_bot_features import (
     link_telegram_command, handle_link_callback, points_command,
     loyalty_programs_callback, update_profile_callback, notifications_command,
-    test_notification_callback, admin_send_points
+    test_notification_callback, admin_send_points, show_history_callback,
+    back_to_points_callback
 )
 
 # Enable logging
@@ -154,22 +155,28 @@ Usa /help para ver todos los comandos disponibles.
             
             for client in clients:
                 try:
-                    # Get recent transactions from PointsTransaction model
-                    from core.models import PointsTransaction
-                    transactions = await sync_to_async(list)(
-                        PointsTransaction.objects.filter(
-                            account__client=client
-                        ).order_by('-created_at')[:5]
+                    # Get recent point events
+                    from core.models import PointEvent
+                    events = await sync_to_async(list)(
+                        PointEvent.objects.filter(
+                            client=client
+                        ).order_by('-occurred_at')[:5]
                     )
-                    
-                    if transactions:
+
+                    if events:
                         has_transactions = True
                         business_name = await sync_to_async(lambda: client.business.name)()
                         message += f"🏪 **{business_name}**\n"
-                        for transaction in transactions:
-                            transaction_type = "➕" if transaction.transaction_type == "EARN" else "➖"
-                            message += f"   {transaction_type} {transaction.points} pts - {transaction.description}\n"
-                            message += f"      📅 {transaction.created_at.strftime('%d/%m/%Y %H:%M')}\n"
+                        for event in events:
+                            event_type = "➕" if event.points > 0 else "➖"
+                            source_emoji = {
+                                'purchase': '🛍️',
+                                'birthday': '🎂',
+                                'adjustment': '⚙️'
+                            }.get(event.source, '📝')
+
+                            message += f"   {event_type} {event.points} pts - {source_emoji} {event.get_source_display()}\n"
+                            message += f"      📅 {event.occurred_at.strftime('%d/%m/%Y %H:%M')}\n"
                         message += "\n"
                         
                 except Exception as e:
@@ -299,15 +306,16 @@ Usa /help para ver todos los comandos disponibles.
 • {business.points_per_currency} puntos por cada peso gastado
 • {business.birthday_bonus_points} puntos de regalo en tu cumpleaños
 
-Para completar tu registro, necesito que me envíes tu **nombre completo**.
+Para completar tu registro, necesito algunos datos. Comenzemos:
 
-✍️ Escribe tu nombre:
+📱 **Número de teléfono** (formato internacional):
+Ejemplo: +5212345678901
                 """
-                
+
                 # Store business_id in user context
                 context.user_data['registering_business_id'] = str(business.business_id)
-                context.user_data['registration_step'] = 'awaiting_name'
-                
+                context.user_data['registration_step'] = 'awaiting_phone'
+
                 await query.edit_message_text(message, parse_mode='Markdown')
                 
         except Business.DoesNotExist:
@@ -317,59 +325,131 @@ Para completar tu registro, necesito que me envíes tu **nombre completo**.
             await query.edit_message_text("❌ Error procesando tu selección. Intenta de nuevo.")
 
     async def handle_registration(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle user registration process."""
+        """Handle user registration process with complete data collection."""
         if 'registration_step' not in context.user_data:
             return
-            
+
         user = update.effective_user
         telegram_id = user.id
-        message_text = update.message.text
-        
+        message_text = update.message.text.strip()
+
         try:
-            if context.user_data['registration_step'] == 'awaiting_name':
+            step = context.user_data['registration_step']
+
+            if step == 'awaiting_phone':
+                # First step: phone number
+                if not self._validate_phone(message_text):
+                    await update.message.reply_text(
+                        "❌ **Formato de teléfono inválido**\n\n"
+                        "Por favor ingresa tu teléfono con formato internacional:\n"
+                        "Ejemplo: +5212345678901\n\n"
+                        "📱 Ingresa tu número de teléfono:"
+                    )
+                    return
+
+                # Check if phone already exists
                 business_id = context.user_data['registering_business_id']
                 business = await sync_to_async(Business.objects.get)(business_id=business_id)
-                
-                # Create client with Telegram info
-                client = await sync_to_async(ClientService.create_client_with_account)(
-                    business=business,
-                    name=message_text,
-                    email=f"telegram_{telegram_id}@fidelo.local",  # Temporary email
-                    phone=None,  # Could ask for phone later
-                    birthday=None  # Could ask for birthday later
-                )
-                
-                # Clear registration data
-                del context.user_data['registration_step']
-                del context.user_data['registering_business_id']
-                
-                success_message = f"""
-🎉 **¡Registro completado!**
 
-Bienvenido a **{business.name}**, {client.name}!
+                # DEBUG: Log search details
+                logger.info(f"DEBUG: Searching for phone '{message_text}' in business '{business.name}' (ID: {business.business_id})")
 
-🎯 **Tu cuenta:**
-• Puntos actuales: **0** pts
-• Ganancia por compra: {business.points_per_currency} pts por peso
-• Bonus cumpleaños: {business.birthday_bonus_points} pts
+                try:
+                    existing_client = await sync_to_async(Client.objects.get)(
+                        business=business, phone=message_text
+                    )
+                    logger.info(f"DEBUG: FOUND client '{existing_client.name}' with phone '{existing_client.phone}'")
 
-🚀 **¡Ya puedes empezar a acumular puntos!**
+                    # Phone exists - update with Telegram info and fill missing data
+                    context.user_data['existing_client_id'] = str(existing_client.client_id)
+                    context.user_data['client_phone'] = message_text
 
-¿Qué quieres hacer ahora?
-                """
-                
-                keyboard = [
-                    [InlineKeyboardButton("🎯 Ver Mis Puntos", callback_data=f"points_{business.business_id}")],
-                    [InlineKeyboardButton("📋 Ver Comandos", callback_data="help")],
-                ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                
+                    missing_data = []
+                    if not existing_client.name or existing_client.name.startswith('Cliente '):
+                        missing_data.append('nombre completo')
+                    if not existing_client.email or existing_client.email.startswith('phone_'):
+                        missing_data.append('email')
+                    if not existing_client.birthday:
+                        missing_data.append('fecha de nacimiento')
+
+                    if missing_data:
+                        missing_str = ', '.join(missing_data)
+
+                        # Show existing purchases even with missing data
+                        purchase_info = await self._get_client_purchase_summary(existing_client)
+
+                        await update.message.reply_text(
+                            f"✅ **¡Teléfono encontrado!**\n\n"
+                            f"Ya tienes una cuenta en **{business.name}**, pero necesitamos completar algunos datos:\n\n"
+                            f"📝 Datos faltantes: {missing_str}\n\n"
+                            f"{purchase_info}\n"
+                            f"👤 **Nombre completo:**"
+                        )
+                        context.user_data['registration_step'] = 'awaiting_name'
+                    else:
+                        # Link Telegram to existing complete account
+                        existing_client.email = f"telegram_{telegram_id}@fidelo.local"
+                        await sync_to_async(existing_client.save)()
+
+                        await self._show_registration_success_with_history(update, context, business, existing_client, is_update=True)
+                        return
+
+                except Client.DoesNotExist:
+                    # New phone - continue with registration
+                    logger.info(f"DEBUG: CLIENT NOT FOUND with phone '{message_text}' in business '{business.name}' (ID: {business.business_id})")
+                    context.user_data['client_phone'] = message_text
+                    await update.message.reply_text(
+                        "📱 **Nuevo número registrado**\n\n"
+                        "👤 **Nombre completo:**"
+                    )
+                    context.user_data['registration_step'] = 'awaiting_name'
+
+            elif step == 'awaiting_name':
+                if len(message_text) < 2:
+                    await update.message.reply_text(
+                        "❌ **Nombre muy corto**\n\n"
+                        "👤 **Ingresa tu nombre completo:**"
+                    )
+                    return
+
+                context.user_data['client_name'] = message_text
+                await self._complete_registration(update, context)
+
+            elif step == 'awaiting_email':
+                if message_text.lower() == '/skip':
+                    context.user_data['client_email'] = ''
+                elif '@' not in message_text:
+                    await update.message.reply_text(
+                        "❌ **Email inválido**\n\n"
+                        "📧 **Ingresa un email válido** o presiona /skip para omitir:"
+                    )
+                    return
+                else:
+                    context.user_data['client_email'] = message_text
+
                 await update.message.reply_text(
-                    success_message,
-                    reply_markup=reply_markup,
-                    parse_mode='Markdown'
+                    "🎂 **Fecha de nacimiento** (opcional - presiona /skip para omitir)\n\n"
+                    "Formato: DD/MM/AAAA\n"
+                    "Ejemplo: 15/05/1990"
                 )
-                
+                context.user_data['registration_step'] = 'awaiting_birthday'
+
+            elif step == 'awaiting_birthday':
+                birthday = None
+                if message_text.lower() != '/skip':
+                    birthday = self._parse_birthday(message_text)
+                    if not birthday:
+                        await update.message.reply_text(
+                            "❌ **Fecha inválida**\n\n"
+                            "🎂 **Formato correcto:** DD/MM/AAAA\n"
+                            "Ejemplo: 15/05/1990\n\n"
+                            "O presiona /skip para omitir:"
+                        )
+                        return
+
+                context.user_data['client_birthday'] = birthday
+                await self._complete_registration(update, context)
+
         except Business.DoesNotExist:
             await update.message.reply_text("❌ Error: Negocio no encontrado.")
         except Exception as e:
@@ -554,23 +634,31 @@ Bienvenido a **{business.name}**, {client.name}!
                     email=f"telegram_{telegram_id}@fidelo.local"
                 )
                 
-                # Get recent transactions from PointsTransaction model
-                from core.models import PointsTransaction
-                transactions = await sync_to_async(list)(
-                    PointsTransaction.objects.filter(
-                        account__client=client
-                    ).order_by('-created_at')[:10]
+                # Get recent point events
+                from core.models import PointEvent
+                events = await sync_to_async(list)(
+                    PointEvent.objects.filter(
+                        client=client
+                    ).order_by('-occurred_at')[:10]
                 )
                 
                 message = f"📊 **Historial de {business.name}**\n\n"
-                
-                if transactions:
-                    for transaction in transactions:
-                        transaction_type = "➕" if transaction.transaction_type == "EARN" else "➖"
-                        message += f"{transaction_type} **{transaction.points} pts** - {transaction.description}\n"
-                        message += f"   📅 {transaction.created_at.strftime('%d/%m/%Y %H:%M')}\n\n"
+
+                if events:
+                    for event in events:
+                        event_type = "➕" if event.points > 0 else "➖"
+                        source_emoji = {
+                            'purchase': '🛍️',
+                            'birthday': '🎂',
+                            'adjustment': '⚙️'
+                        }.get(event.source, '📝')
+
+                        message += f"{event_type} **{event.points} pts** - {source_emoji} {event.get_source_display()}\n"
+                        if event.note:
+                            message += f"   📝 {event.note}\n"
+                        message += f"   📅 {event.occurred_at.strftime('%d/%m/%Y %H:%M')}\n\n"
                 else:
-                    message += "📝 **No tienes transacciones en este negocio aún.**\n\n"
+                    message += "📝 **No tienes eventos de puntos en este negocio aún.**\n\n"
                     message += "Los puntos aparecerán aquí cuando:\n"
                     message += "• Realices compras en el negocio\n"
                     message += "• Recibas bonificaciones especiales\n"
@@ -608,6 +696,146 @@ Bienvenido a **{business.name}**, {client.name}!
         else:
             await update.message.reply_text(
                 "🤔 No entiendo ese comando.\n"
+                "Usa /help para ver los comandos disponibles."
+            )
+
+    def _validate_phone(self, phone: str) -> bool:
+        """Validate phone number format."""
+        import re
+        # Basic validation for international format
+        pattern = r'^\+\d{10,15}$'
+        return bool(re.match(pattern, phone.replace(' ', '').replace('-', '')))
+
+    def _parse_birthday(self, date_str: str):
+        """Parse birthday string to date object."""
+        from datetime import datetime
+        try:
+            # Try DD/MM/YYYY format
+            return datetime.strptime(date_str, '%d/%m/%Y').date()
+        except ValueError:
+            try:
+                # Try DD-MM-YYYY format
+                return datetime.strptime(date_str, '%d-%m-%Y').date()
+            except ValueError:
+                return None
+
+    async def _complete_registration(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Complete the registration process."""
+        try:
+            user = update.effective_user
+            telegram_id = user.id
+            business_id = context.user_data['registering_business_id']
+            business = await sync_to_async(Business.objects.get)(business_id=business_id)
+
+            client_data = {
+                'business': business,
+                'name': context.user_data['client_name'],
+                'phone': context.user_data['client_phone'],
+                'birthday': context.user_data.get('client_birthday'),
+                'email': f"telegram_{telegram_id}@fidelo.local"
+            }
+
+            # Handle email
+            if context.user_data.get('client_email'):
+                # If user provided email, use it but keep telegram format as backup
+                real_email = context.user_data['client_email']
+                client_data['email'] = f"telegram_{telegram_id}@fidelo.local"  # Keep for system
+                # We'll store the real email in a separate field if needed
+
+            # Check if updating existing client
+            if 'existing_client_id' in context.user_data:
+                # Update existing client
+                client_id = context.user_data['existing_client_id']
+                client = await sync_to_async(Client.objects.get)(client_id=client_id)
+
+                # Update fields
+                client.name = client_data['name']
+                client.email = client_data['email']
+                if client_data['birthday']:
+                    client.birthday = client_data['birthday']
+
+                await sync_to_async(client.save)()
+                is_update = True
+            else:
+                # Create new client
+                client = await sync_to_async(ClientService.create_client_with_account)(**client_data)
+                is_update = False
+
+            await self._show_registration_success(update, context, business, client, is_update)
+
+        except Exception as e:
+            logger.error(f"Error completing registration: {e}")
+            await update.message.reply_text(
+                "❌ Error completando el registro. Intenta de nuevo con /start"
+            )
+
+    async def _show_registration_success(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                                       business, client, is_update: bool = False):
+        """Show registration success message."""
+        try:
+            # Clear registration data
+            context.user_data.clear()
+
+            if is_update:
+                success_message = f"""
+🎉 **¡Cuenta vinculada exitosamente!**
+
+Tu teléfono ha sido vinculado a tu cuenta de Telegram en **{business.name}**.
+
+👤 **Tu información:**
+• Nombre: {client.name}
+• Teléfono: {client.phone}
+• Cuenta vinculada a Telegram
+
+🎯 **Tu cuenta:**
+                """
+            else:
+                success_message = f"""
+🎉 **¡Registro completado!**
+
+Bienvenido a **{business.name}**, {client.name}!
+
+👤 **Tu información:**
+• Nombre: {client.name}
+• Teléfono: {client.phone}
+• Email: {client.email if not client.email.startswith('telegram_') else 'Email de Telegram'}
+
+🎯 **Tu cuenta:**
+                """
+
+            try:
+                account = await sync_to_async(LoyaltyAccount.objects.get)(client=client)
+                points_balance = account.points_balance
+            except LoyaltyAccount.DoesNotExist:
+                points_balance = 0
+
+            success_message += f"""
+• Puntos actuales: **{points_balance}** pts
+• Ganancia por compra: {business.points_per_currency} pts por peso
+• Bonus cumpleaños: {business.birthday_bonus_points} pts
+
+🚀 **¡Ya puedes empezar a acumular puntos!**
+
+¿Qué quieres hacer ahora?
+            """
+
+            keyboard = [
+                [InlineKeyboardButton("🎯 Ver Mis Puntos", callback_data=f"points_{business.business_id}")],
+                [InlineKeyboardButton("📊 Ver Historial Completo", callback_data=f"history_{business.business_id}")],
+                [InlineKeyboardButton("📋 Ver Comandos", callback_data="help")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                success_message,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing registration success: {e}")
+            await update.message.reply_text(
+                "✅ Registro completado exitosamente!\n"
                 "Usa /help para ver los comandos disponibles."
             )
 
@@ -672,6 +900,14 @@ Bienvenido a **{business.name}**, {client.name}!
             test_notification_callback,
             pattern=r'^test_notification$'
         ))
+        self.application.add_handler(CallbackQueryHandler(
+            show_history_callback,
+            pattern=r'^show_history$'
+        ))
+        self.application.add_handler(CallbackQueryHandler(
+            back_to_points_callback,
+            pattern=r'^back_to_points$'
+        ))
         
         # Message handlers
         self.application.add_handler(MessageHandler(
@@ -686,6 +922,86 @@ Bienvenido a **{business.name}**, {client.name}!
             self.setup_handlers()
         
         return self.application
+
+
+    async def _get_client_purchase_summary(self, client):
+        """Get a summary of client's existing purchases."""
+        try:
+            # Get recent purchases
+            purchases = await sync_to_async(list)(
+                Purchase.objects.filter(client=client).order_by('-purchased_at')[:3]
+            )
+
+            if not purchases:
+                return "📝 **Historial:** Sin compras registradas aún"
+
+            # Get account info
+            try:
+                account = await sync_to_async(LoyaltyAccount.objects.get)(client=client)
+                points_balance = account.points_balance
+            except LoyaltyAccount.DoesNotExist:
+                points_balance = 0
+
+            summary = f"💎 **Puntos actuales:** {points_balance} pts\n\n"
+            summary += "🛍️ **Últimas compras:**\n"
+
+            for purchase in purchases:
+                purchase_date = purchase.purchased_at.strftime('%d/%m/%Y')
+                points_earned = int(purchase.amount * purchase.business.points_per_currency)
+                summary += f"• ${purchase.amount} {purchase.currency} - {points_earned} pts ({purchase_date})\n"
+
+            return summary
+
+        except Exception as e:
+            logger.error(f"Error getting purchase summary: {e}")
+            return "📝 **Historial:** Error al cargar compras"
+
+    async def _show_registration_success_with_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE,
+                                                    business, client, is_update: bool = False):
+        """Show registration success message with purchase history."""
+        try:
+            # Clear registration data
+            context.user_data.clear()
+
+            # Get purchase history
+            purchase_info = await self._get_client_purchase_summary(client)
+
+            success_message = f"""
+🎉 **¡Cuenta vinculada exitosamente!**
+
+Tu teléfono ha sido vinculado a tu cuenta de Telegram en **{business.name}**.
+
+👤 **Tu información:**
+• Nombre: {client.name}
+• Teléfono: {client.phone}
+• Cuenta vinculada a Telegram
+
+{purchase_info}
+
+🚀 **¡Ya puedes ver todas tus compras y puntos!**
+
+¿Qué quieres hacer ahora?
+            """
+
+            keyboard = [
+                [InlineKeyboardButton("🎯 Ver Mis Puntos", callback_data=f"points_{business.business_id}")],
+                [InlineKeyboardButton("📊 Ver Historial Completo", callback_data=f"history_{business.business_id}")],
+                [InlineKeyboardButton("📋 Ver Comandos", callback_data="help")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+
+            await update.message.reply_text(
+                success_message,
+                reply_markup=reply_markup,
+                parse_mode='Markdown'
+            )
+
+        except Exception as e:
+            logger.error(f"Error showing registration success with history: {e}")
+            await update.message.reply_text(
+                "✅ Registro completado exitosamente!\n"
+                "Usa /help para ver los comandos disponibles."
+            )
 
 
 # Global bot instance

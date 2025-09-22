@@ -1,6 +1,7 @@
 """
-SMS Service for FideloBot
+SMS Service for FideloBot - TEMPORARILY DISABLED
 Supports both simulation (free) and real SMS (Twilio)
+Note: SMS functionality is currently disabled for first contact.
 """
 import logging
 from django.conf import settings
